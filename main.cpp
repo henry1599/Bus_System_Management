@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <string>
 #include <iostream>
-#include <iomanip>
+#include <windows.h>
 #include <assert.h>
 #include <type_traits>
+#include <iomanip>
 #include <map>
 using namespace std;
 #define MAX_INT 1e5
@@ -13,7 +14,7 @@ using namespace std;
 
 
 
-int N; // số chuyến tối đa của mỗi tuyến trong suốt quá trình
+unsigned long long int N; // Maximum trip in each route of the system
 /* Note: 
     * You change anything in this answer 
     * such that your implementation must have BusSystem class with method query.
@@ -98,21 +99,87 @@ private:
     map<string , vector<Bus>> System;
 
 public:
-    BusSystem(){}
-    ~BusSystem(){}
+    BusSystem()
+    {
+        for (map<string , vector<Bus>>::iterator Mouse = this->System.begin(); Mouse != this->System.end(); Mouse++)
+        {
+            Mouse->second.resize(0);
+        }
+    }
+    ~BusSystem()
+    {
+        this->System.clear();
+    }
      
+    /* Pre : a string as an instruction, whatever string
+     * Post : a string satisfied the requirement
+     * */
     string query(string instruction);
+    /* Pre : the initial instruction as a string, whatever string
+     * Post : a vector string contains each element of the input instruction
+     * */
     vector<string> Split_Command(string instructor);
-    bool is_valid(vector<string> result, string instruction);
-    void Initial_Setup(int _N);
+    /* Pre : - all parameter must be positive numbers
+     *       - _time_A_1 <= _time_B_1 <= _time_A_2 <= _time_B_2
+     * Post : - True : [_time_A_1 , _time_B_1] overlaps with [_time_A_2 , _time_B_2]
+     *        - False : [_time_A_1 , _time_B_1] does not overlap with [_time_A_2 , _time_B_2] 
+     * */
+    bool is_overlap(int _time_A_1, int _time_B_1, int _time_A_2, int _time_B_2);
+    /* Pre : 
+     * - standard _ID and _LP (satisfied the requirement)
+     * - _time_A <= _time_B && _time_A, _time_B > 0
+     * - _CASE = {0,1} (optional parameter)
+     * Post : 
+     * - 1 : if successfully push a new bus into the System
+     * - 0 : if cannot push a new bus into System due to several reasons mentioned in requirement
+     * */
     int INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE = 0);
+    /* Pre : 
+     * - standard _ID (satisfied the requirement)
+     * - _time_A <= _time_B && _time_A, _time_B > 0 (optional variables)
+     * Post :
+     * - <number> : the number of deleted buses
+     * */
     int DEL(string _ID, int _time_A, int _time_B);
+    /* Pre : 
+     * - standard _ID (satisfied the requirement)
+     * - _time > 0 (optional variable)
+     * - _CASE = {0,1} (optional variable)
+     * Post : 
+     * - <number> : the number of buses started but have not stopped yet at the considered time <time>
+     * */
     int CS(string _ID, int _time, int _CASE);
+    /* Pre : 
+     * - standard _ID (satisfied the requirement)
+     * - _time > 0 (optional vaiable)
+     * - _CASE = {0,1} (optional variable)
+     * Post :
+     * - <number> : the number of buses have already stopped at the considered time <time>
+     * */
     int CE(string _ID, int _time, int _CASE);
+    /* Pre : 
+     * - standard _ID (satisfied requirement)
+     * - _time > 0 (optional variable)
+     * - _CASE = {0,1} (optional variable)
+     * Post : 
+     * - <LP> : the License plate of A BUS which departure time is greater than considered time <time>
+     * */
     string GS(string _ID, int _time, int _CASE);
+    /* Pre : 
+     * - standard _ID (satisfied requirement)
+     * - _time > 0 (optional variable)
+     * - _CASE = {0,1} (optional variable)
+     * Post : 
+     * - <LP> : the License plate of A BUS which stop time is greater than considered time <time>
+     * */
     string GE(string _ID, int _time, int _CASE);
+    /* Pre : 
+     * - does not have any parameters 
+     * Post : 
+     * - A table show all information of the System (ID, LP, CASE, TIME_A, TIME_B)
+     * */
     void print();
-    void input();
+    void input(BusSystem *bs);
 };
 
 vector<string> BusSystem::Split_Command(string instructor)
@@ -133,10 +200,16 @@ vector<string> BusSystem::Split_Command(string instructor)
     return Storage;
 }
 
+bool BusSystem::is_overlap(int _time_A_1, int _time_B_1, int _time_A_2, int _time_B_2)
+{
+    if (_time_B_2 < _time_A_1)
+        return false;
+    else
+        return true;
+}
+
 int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
 {
-    if (_time_A == -1 || _time_B == -1)
-        return -1;
     // Create new Iterator name after my name :)))
     // To find whether the "_ID" is in the current System or not
     map<string , vector<Bus>>::iterator Henry;
@@ -144,6 +217,8 @@ int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
     // If found : Henry will point to that "_ID" in the System
     // Otherwise, Henry points to the end() of the System
     Henry = this->System.find(_ID);
+    if (N == 0)
+        return -1;
     if (Henry->second.size() == N)
         return -1;
     if (Henry == this->System.end()) // Not found the ID
@@ -152,6 +227,7 @@ int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
         Bus myBus = Bus(_ID, _LP, _CASE, _time_A, _time_B, 0, false);
         // Create new vector to insert into map
         vector<Bus> newVec;
+        newVec.resize(0);
         // insert new ID of the routes as well as a new empty vector
         this->System.insert({_ID,newVec});
         Henry = this->System.find(_ID);
@@ -176,12 +252,10 @@ int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
             if (it_bus->LP == _LP) // if new bus has already been existed
             {
                 isExist = true;
-                int time_end_prev = it_bus->TIME_B;
-                int time_start_next = _time_A;
                 // Debug message
                 // cout << "PREV : " << time_end_prev << " | NEXT : " << time_start_next << endl;
                 // end message
-                if (time_start_next > time_end_prev)
+                if (!this->is_overlap(_time_A,_time_B, it_bus->TIME_A, it_bus->TIME_B))
                 {
                     is_Valid_Same_LP = true;
                     break;
@@ -233,7 +307,7 @@ int BusSystem::DEL(string _ID, int _time_A, int _time_B)
 {
     map<string, vector<Bus>>::iterator Henry = this->System.find(_ID);
     if (_time_B < _time_A && _time_B != -1 && _time_A != -1)
-        return 0;
+        return -1;
     if (Henry == this->System.end()) // Not found the route
         return 0;
     else // Found the route 
@@ -303,30 +377,15 @@ int BusSystem::CE(string _ID, int _time, int _CASE)
         return -1;
     else
     {
-        int count_number_bus_not_start = 0;
-        for (vector<Bus>::iterator it_bus = Henry->second.begin(); it_bus != Henry->second.end(); it_bus++)
+        int count_bus_stop = 0;
+        for (vector<Bus>::iterator Mouse = Henry->second.begin(); Mouse != Henry->second.end(); Mouse++)
         {
-            if (_CASE == -1)
+            if (Mouse->TIME_B < _time)
             {
-                count_number_bus_not_start += (_time < it_bus->TIME_A) ? 1 : 0;
-            }
-            else
-            {
-                count_number_bus_not_start += (_time < it_bus->TIME_A && it_bus->CASE == _CASE) ? 1 : 0;
+                count_bus_stop++;
             }
         }
-        int count_number_bus_on_way = this->CS(_ID, _time, _CASE) == -1 ? 0 : this->CS(_ID, _time, _CASE);
-        // Debug message
-        // cout << "ON way : " << count_number_bus_on_way << endl 
-        //      << "not Start : " << count_number_bus_not_start << endl;
-        // End message
-        int count_number_bus = 0;
-        for (vector<Bus>::iterator it_bus = Henry->second.begin(); it_bus != Henry->second.end(); it_bus++)
-        {
-            count_number_bus += (it_bus->CASE == _CASE) ? 1 : 0;
-        }
-        return (count_number_bus - count_number_bus_not_start - count_number_bus_on_way) > 0 ? 
-               (count_number_bus - count_number_bus_not_start - count_number_bus_on_way) : 0;
+        return count_bus_stop;
     }
 }
 
@@ -345,7 +404,7 @@ string BusSystem::GS(string _ID, int _time, int _CASE)
             {
                 if (it_bus->CASE == _CASE)
                 {
-                    int min = _time - it_bus->TIME_A > 0 ? _time - it_bus->TIME_A : MAX_INT;
+                    int min = _time - it_bus->TIME_A >= 0 ? _time - it_bus->TIME_A : MAX_INT;
                     if (Delta_time > min)
                     {
                         Delta_time = min;
@@ -368,7 +427,7 @@ string BusSystem::GS(string _ID, int _time, int _CASE)
             {
                 if (it_bus->CASE == 0)
                 {
-                    int min = _time - it_bus->TIME_A > 0 ? _time - it_bus->TIME_A : MAX_INT;
+                    int min = _time - it_bus->TIME_A >= 0 ? _time - it_bus->TIME_A : MAX_INT;
                     if (Delta_time_Outgoing > min)
                     {
                         Delta_time_Outgoing = min;
@@ -380,7 +439,7 @@ string BusSystem::GS(string _ID, int _time, int _CASE)
             {
                 if (it_bus->CASE == 1)
                 {
-                    int min = _time - it_bus->TIME_A > 0 ? _time - it_bus->TIME_A : MAX_INT;
+                    int min = _time - it_bus->TIME_A >= 0 ? _time - it_bus->TIME_A : MAX_INT;
                     if (Delta_time_Return > min)
                     {
                         Delta_time_Return = min;
@@ -389,7 +448,7 @@ string BusSystem::GS(string _ID, int _time, int _CASE)
                 }
             }
             if (Delta_time_Outgoing == Delta_time_Return)
-                return result_LP_Outgoing;
+                return result_LP_Outgoing == "" ? "-1" : result_LP_Outgoing;
             else
             {
                 string result_LP = Delta_time_Outgoing > Delta_time_Return ? result_LP_Return : result_LP_Outgoing;
@@ -405,7 +464,7 @@ string BusSystem::GE(string _ID, int _time, int _CASE)
 {
     map<string, vector<Bus>>::iterator Henry = this->System.find(_ID);
     if (Henry == this->System.end())
-        return 0;
+        return "-1";
     else
     {
         if (_CASE != -1) // one direction
@@ -515,6 +574,7 @@ string BusSystem::GE(string _ID, int _time, int _CASE)
             }
             else
             {
+                
                 string result_LP = Delta_time_Outgoing > Delta_time_Return ? result_LP_Return : result_LP_Outgoing;
                 if (result_LP == "")
                     result_LP = "-1";
@@ -554,10 +614,11 @@ void BusSystem::print()
     }
 }
 
-void BusSystem::input()
+void BusSystem::input(BusSystem *bs)
 {
     cout << "Press 'x' anytime to exit" << endl;
     cout << "Press 'p' anytime to print the table" << endl;
+    cout << "Press 'c' anytime to clear the console" << endl;
     while (true)
     {
         string result = "";
@@ -566,8 +627,18 @@ void BusSystem::input()
         if (result == "x" || result == "X")
             break;
         if (result == "p" || result == "P")
-            this->print();
-        this->query(result);
+        {
+            bs->print();
+        }
+        if (result == "c" || result == "C")
+        {
+            system("cls");
+            cout << "Press 'x' anytime to exit" << endl;
+            cout << "Press 'p' anytime to print the table" << endl;
+            cout << "Press 'c' anytime to clear the console" << endl;
+        }
+        if (result == "") continue;
+        bs->query(result);
     }
 }
 
@@ -596,46 +667,73 @@ string BusSystem::query(string instruction)
         string _time_A = "";
         string _time_B = "";
         vector<string> Result = this->Split_Command(instruction);
-        if (Result.size() < 3)
+        if (Result.size() != 5 && Result.size() != 6)
             return "-1";
-        unsigned int i = 1;
-        if (i < Result.size())
+        bool is_CASE = Result.size() == 5 ? false : true;
+        if (is_CASE) // CASE exists
         {
-            _ID = Result.at(i);
-            i++;
+            unsigned int i = 1;
+            if (i < Result.size())
+            {
+                _ID = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _LP = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _CASE = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _time_A = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _time_B = Result.at(i);
+                i++;
+            }
+            if (_CASE != "1" && _CASE != "0")
+            {
+                return "-1";
+            }
         }
-        if (i < Result.size())
+        else // CASE does not exist
         {
-            _LP = Result.at(i);
-            i++;
-        }
-        if (i < Result.size())
-        {
-            _CASE = Result.at(i);
-            i++;
-        }
-        if (i < Result.size())
-        {
-            _time_A = Result.at(i);
-            i++;
-        }
-        if (i < Result.size())
-        {
-            _time_B = Result.at(i);
-            i++;
-        }
-        if (i < Result.size()) 
-            return "-1";
-        
-        // Check valid values
-        // Check if Case exist or not
-        // if not, assign -1 to case
-        if (_CASE.size() != 1)
-        {
-            _time_B = _time_A;
-            _time_A = _CASE;
+            unsigned int i = 1;
+            if (i < Result.size())
+            {
+                _ID = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _LP = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _time_A = Result.at(i);
+                i++;
+            }
+            if (i < Result.size())
+            {
+                _time_B = Result.at(i);
+                i++;
+            }
             _CASE = "0";
         }
+        
+        if (_LP.size() > 10)
+            return "-1";
+        if (_ID.size() > 5)
+            return "-1";
+        
         try
         {
             stoi(_time_A);
@@ -647,8 +745,14 @@ string BusSystem::query(string instruction)
             return "-1";
         }
         // Check time
-        if (_time_A == "") return "-1";
-        if (_time_B == "") return "-1";
+        while (_time_A[0] == '0')
+        {
+            _time_A.erase(_time_A.begin());
+        }
+        while (_time_B[0] == '0')
+        {
+            _time_B.erase(_time_B.begin());
+        }
         if (to_string(stoi(_time_A)) != _time_A) return "-1";
         if (to_string(stoi(_time_B)) != _time_B) return "-1";
         // Debug message
@@ -924,46 +1028,19 @@ string BusSystem::query(string instruction)
     return "-1";
 }
 
-// Check input string
+// Check input string, particularly INS instruction
 /*
  * 1. Check the space at the beginning and the end
  * 2. Check if the time_A and time_B contains character
  * 3. Check valid case input (not [Case], but Case)
  * 4. Check the right order of each element in the input string
  * */
+#define Out cout
 int main()
 {
     BusSystem *bs = new BusSystem();
-    bs->query("SQ 10");
-    bs->query("INS A12B 5D-23342 1235 5678");
-    bs->query("INS B23A 31RE-555 0 1235 9121");
-    bs->query("INS C400 54D143-111 0 12778 21001");
-    bs->query("INS D33 14C2-738 121 912");
-    bs->query("INS A12B 51D2-3244 1 1235 5655");
-    bs->query("INS B23A 32C-66563 657 9121");
-    bs->query("INS 43A 51D6-89191 0 277 1100");
-    bs->query("INS D43 AD-738 5699 9121");
-    bs->query("INS A12 50D-23342 1 1235 5678");
-    bs->query("INS B23 32C-55555 0 1235 9121");
-    bs->query("INS C4 54D1-89391 0 1277 2100");
-    bs->query("INS D43 44C2-73847 1299 9121");
-    bs->query("INS A1 51DA-23244 1 1211 5655");
-    bs->query("INS B23 32C-66563 657 912");
-    bs->query("INS 43A 51D6-89191 0 277 1100"); 
-    bs->query("INS D43 AD-738 5699 9121");
-    bs->query("INS 50 50D1-23342 1 1235 5678");
-    bs->query("INS 50 32C1-55555 0 1235 9121");
-    bs->query("INS 50 54D1-89391 0 1277 2100");
-    bs->query("INS 50 44C2-73847 1 1299 9121");
-    bs->query("INS 50 50D1-23342 1234 5678");
-    bs->query("INS 50 50D1-23342 1234 5679");
-    bs->query("INS 50 59A3-18965 1244 1754");
-    bs->query("INS 50 54B3-18365 1245 1754");
-    bs->query("INS 33 54F1-21076 1 1232 1345");
-    bs->query("INS 33 51B5-22451 0 1235 1412");
-    bs->print();
-    // bs->query("DEL 50");
-    // bs->query("DEL A12B");
-    // bs->query("DEL D43");
-    // bs->print();
+    // Out << bs->query("SQ 1") << endl;
+    // Out << bs->query("INS 50 50D1-23341 1234 5678") << endl;
+    // Out << bs->query("INS 50 50A1-53246 1235 5689") << endl;
+    bs->input(bs);
 }
