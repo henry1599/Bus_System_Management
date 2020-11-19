@@ -1,5 +1,5 @@
 # Bus_System_Management
-A basic system used to manage a bus system in city.
+A basic system used to manage a bus system in city. Just for Windows 7+
 # 1. Introduction
 In big cities, public transport is an important object of the city's overall infrastructure. Public transport is one of the methods of transportation for modern people in big cities, especially buses.
 
