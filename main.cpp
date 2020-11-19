@@ -42,33 +42,27 @@ public:
         this->CASE = 0;
         this->TIME_A = 0;
         this->TIME_B = 0;
-        this->TIME = 0;
-        this->is_on_way = 0;
     }
-    Bus(string _bus_CODE, string _bus_LP, int _bus_CASE, int _bus_TIME_A, int _bus_TIME_B, int _bus_TIME, bool _bus_is_on_way)
+    Bus(string _bus_CODE, string _bus_LP, int _bus_CASE, int _bus_TIME_A, int _bus_TIME_B)
     {
         this->ID = _bus_CODE;
         this->LP = _bus_LP;
         this->CASE = _bus_CASE;
         this->TIME_A = _bus_TIME_A;
         this->TIME_B = _bus_TIME_B;
-        this->TIME = _bus_TIME;
-        this->is_on_way = _bus_is_on_way;
     }
     friend ostream &operator<<(ostream &os, const Bus &data)
     {
-        os << data.ID << " | " << data.LP << " | " << data.CASE << " | " << data.TIME_A << " | "  << data.TIME_B << " | " << data.TIME << " | " << data.is_on_way;
+        os << data.ID << " | " << data.LP << " | " << data.CASE << " | " << data.TIME_A << " | "  << data.TIME_B;
         return os;
     }
-    Bus &operator=(const Bus &data)
+    Bus &operator=(Bus &data)
     {
         this->ID = data.ID;
         this->CASE = data.CASE;
-        this->is_on_way = data.is_on_way;
         this->LP = data.LP;
         this->TIME_A = data.TIME_A;
         this->TIME_B = data.TIME_B;
-        this->TIME = data.TIME;
         return *this;
     }
     bool operator!=(const Bus &data)
@@ -76,20 +70,16 @@ public:
         return (this->ID != data.ID) ||
                (this->CASE != data.CASE) ||
                (this->LP != data.LP) ||
-               (this->is_on_way != data.is_on_way) ||
                (this->TIME_A != data.TIME_A)  ||
-               (this->TIME_B != data.TIME_B) ||
-               (this->TIME != data.TIME);
+               (this->TIME_B != data.TIME_B);
     }
     bool operator==(const Bus &data)
     {
         return (this->ID == data.ID) &&
                (this->CASE == data.CASE) &&
                (this->LP == data.LP) &&
-               (this->is_on_way == data.is_on_way) &&
                (this->TIME_A == data.TIME_A) &&
-               (this->TIME_B == data.TIME_B) &&
-               (this->TIME == data.TIME);
+               (this->TIME_B == data.TIME_B);
     }
 };
 
@@ -187,7 +177,14 @@ vector<string> BusSystem::Split_Command(string instructor)
     string delimiter = " ";
     string post_instructor = instructor;
     vector<string> Storage;
-
+    for (unsigned int i = 0; i < instructor.length() - 1; i++)
+    {
+        if (instructor[i] == ' ' && instructor[i+1] == ' ')
+        {
+            Storage.push_back("MORE_THAN_ONE_SPACE_FAILED_RETURN_-1_NOW");
+            break;
+        }
+    }
     size_t pos = 0;
     string token;
     while ((pos = instructor.find(delimiter)) != string::npos)
@@ -224,7 +221,7 @@ int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
     if (Henry == this->System.end()) // Not found the ID
     {
         // Create new bus to insert into map
-        Bus myBus = Bus(_ID, _LP, _CASE, _time_A, _time_B, 0, false);
+        Bus myBus = Bus(_ID, _LP, _CASE, _time_A, _time_B);
         // Create new vector to insert into map
         vector<Bus> newVec;
         newVec.resize(0);
@@ -240,7 +237,7 @@ int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
     else // Found the ID
     {
         // Create new bus to insert into map
-        Bus myBus = Bus(_ID, _LP, _CASE, _time_A, _time_B, 0, false);
+        Bus myBus = Bus(_ID, _LP, _CASE, _time_A, _time_B);
         // Check if the new bus has already been existed in the System or not
         bool isExist = false;
         // Check if the new bus's outgoing time is valid in case it has already existed in the System
@@ -327,8 +324,16 @@ int BusSystem::DEL(string _ID, int _time_A, int _time_B)
                 {
                     if (_time_A <= it_bus->TIME_A && it_bus->TIME_A <= _time_B)
                     {
-                        Henry->second.erase(it_bus);
-                        it_bus--;
+                        // Henry->second.erase(it_bus);
+                        // it_bus--;
+                        if (Henry->second.size() == 1)
+                        {
+                            Henry->second.clear();
+                            count_delete_bus++;
+                            break;
+                        }
+                        *it_bus = Henry->second.back();
+                        Henry->second.pop_back();
                         count_delete_bus++;
                     }
                 }
@@ -336,8 +341,16 @@ int BusSystem::DEL(string _ID, int _time_A, int _time_B)
                 {
                     if (_time_A == it_bus->TIME_A)
                     {
-                        Henry->second.erase(it_bus);
-                        it_bus--;
+                        // Henry->second.erase(it_bus);
+                        // it_bus--;
+                        if (Henry->second.size() == 1)
+                        {
+                            Henry->second.clear();
+                            count_delete_bus++;
+                            break;
+                        }
+                        *it_bus = Henry->second.back();
+                        Henry->second.pop_back();
                         count_delete_bus++;
                     }
                 }
@@ -359,11 +372,11 @@ int BusSystem::CS(string _ID, int _time, int _CASE)
         {
             if (_CASE == -1) // bidirection
             {
-                count_active_bus += (it_bus->TIME_A < _time && _time < it_bus->TIME_B) ? 1 : 0;
+                count_active_bus += (it_bus->TIME_A <= _time && _time <= it_bus->TIME_B) ? 1 : 0;
             }
             else // one-way direction
             {
-                count_active_bus += (it_bus->TIME_A < _time && _time < it_bus->TIME_B && it_bus->CASE == _CASE) ? 1 : 0;
+                count_active_bus += (it_bus->TIME_A <= _time && _time <= it_bus->TIME_B && it_bus->CASE == _CASE) ? 1 : 0;
             }
         }
         return count_active_bus;
@@ -374,7 +387,7 @@ int BusSystem::CE(string _ID, int _time, int _CASE)
 {
     map<string, vector<Bus>>::iterator Henry = this->System.find(_ID);
     if (Henry == this->System.end())
-        return -1;
+        return 0;
     else
     {
         int count_bus_stop = 0;
@@ -586,58 +599,84 @@ string BusSystem::GE(string _ID, int _time, int _CASE)
 
 void BusSystem::print()
 {
-    if (this->System.empty())
+    cout << "---------------------------------------------------------------------------" << endl;
+    cout << "|" << setw(8) << "Route" << setw(3)
+         << "|" << setw(16) << "License Plate" << setw(3)
+         << "|" << setw(7) << "Case" << setw(3)
+         << "|" << setw(17) << "Departure time" << setw(3)
+         << "|" << setw(11) << "End time" << setw(3) << "|" << endl
+         << "---------------------------------------------------------------------------" << endl;
+    for (auto i : this->System)
     {
-        cout << "The System is currently empty" << endl;
-    }
-    else 
-    {
-        cout << "---------------------------------------------------------------------------" << endl;
-        cout << "|" << setw(8) << "Route" << setw(3) 
-             << "|" << setw(16) << "License Plate" << setw(3) 
-             << "|" << setw(7) << "Case" << setw(3)
-             << "|" << setw(17) << "Departure time" << setw(3) 
-             << "|" << setw(11) << "End time" << setw(3) << "|" << endl
-             << "---------------------------------------------------------------------------" << endl;
-        for (auto i : this->System)
+        for (vector<Bus>::iterator Mouse = i.second.begin(); Mouse != i.second.end(); Mouse++)
         {
-            for (vector<Bus>::iterator Mouse = i.second.begin(); Mouse != i.second.end(); Mouse++)
-            {
-                cout << "|" << setw(6) << Mouse->ID << setw(5) 
-                     << "|" << setw(14) << Mouse->LP << setw(5) 
-                     << "|" << setw(5) << Mouse->CASE << setw(5)
-                     << "|" << setw(12) << Mouse->TIME_A << setw(8)
-                     << "|" << setw(9) << Mouse->TIME_B << setw(5) << "|" << endl;
-            }
+            cout << "|" << setw(6) << Mouse->ID << setw(5)
+                 << "|" << setw(14) << Mouse->LP << setw(5)
+                 << "|" << setw(5) << Mouse->CASE << setw(5)
+                 << "|" << setw(12) << Mouse->TIME_A << setw(8)
+                 << "|" << setw(9) << Mouse->TIME_B << setw(5) << "|" << endl;
         }
-        cout << "---------------------------------------------------------------------------" << endl;
+    }
+    cout << "---------------------------------------------------------------------------" << endl;
+}
+
+template <typename T>
+void print_vector(vector<T> inputVec)
+{
+    for (unsigned int i = 0; i < inputVec.size(); i++)
+    {
+        cout << inputVec.at(i) << endl;
     }
 }
 
 void BusSystem::input(BusSystem *bs)
 {
-    cout << "Press 'x' anytime to exit" << endl;
-    cout << "Press 'p' anytime to print the table" << endl;
-    cout << "Press 'c' anytime to clear the console" << endl;
+    vector<string> history;
+    history.resize(0);
+    vector<string> command_list;
+    command_list.push_back("Press 'exit' anytime to exit");
+    command_list.push_back("Press 'history' anytime to show the command history");
+    command_list.push_back("Press 'clear' anytime to clear the command history");
     while (true)
     {
-        string result = "";
+        system("cls");
+        cout << "Press '--help' anytime to show the command list" << endl;
+        bs->print();
         cout << ">>> ";
+        string result = "";
         getline(cin, result, '\n');
-        if (result == "x" || result == "X")
+        history.push_back(result);
+        if (result == "--help")
+        {
+            print_vector(command_list);
+            cout << "Continue ? [Y/n] : ";
+            char choose;
+            cin >> choose;
+            if (choose == 'y' || choose == 'Y')
+                continue;
+            else
+                break;
+        }
+        if (result == "clear")
+        {
+            history.clear();
+            continue;
+        }
+        if (result == "history")
+        {
+            print_vector(history);
+            cout << "Continue ? [Y/n] : ";
+            char choose;
+            cin >> choose;
+            if (choose == 'y' || choose == 'Y')
+                continue;
+            else
+                break;
+        }
+        if (result == "exit")
             break;
-        if (result == "p" || result == "P")
-        {
-            bs->print();
-        }
-        if (result == "c" || result == "C")
-        {
-            system("cls");
-            cout << "Press 'x' anytime to exit" << endl;
-            cout << "Press 'p' anytime to print the table" << endl;
-            cout << "Press 'c' anytime to clear the console" << endl;
-        }
-        if (result == "") continue;
+        if (result == "")
+            continue;
         bs->query(result);
     }
 }
@@ -656,6 +695,16 @@ string BusSystem::query(string instruction)
     // Handle each situation
     if (Command == "SQ")
     {
+        if (this->Split_Command(instruction).size() != 2)
+            return "-1";
+        try
+        {
+            stoi(this->Split_Command(instruction).at(1));
+        }
+        catch(...)
+        {
+            return "-1";
+        }
         N = stoi(this->Split_Command(instruction).at(1));
         return "1";
     }
@@ -1038,9 +1087,24 @@ string BusSystem::query(string instruction)
 #define Out cout
 int main()
 {
-    BusSystem *bs = new BusSystem();
-    // Out << bs->query("SQ 1") << endl;
-    // Out << bs->query("INS 50 50D1-23341 1234 5678") << endl;
-    // Out << bs->query("INS 50 50A1-53246 1235 5689") << endl;
+    BusSystem* bs = new BusSystem();
     bs->input(bs);
+    // cout << bs->query("SQ 500") << endl;
+    // cout << bs->query("INS 50 50D1-23341 6 12") << endl;  //1
+    // cout << bs->query("INS 50 50D1-23342 5 11") << endl;  //2
+    // cout << bs->query("INS 50 50D1-23341 13 14") << endl;  //3
+    // cout << bs->query("INS 50 50D1-23342 12 13") << endl;   //4
+    // cout << "......." << endl;
+    // cout << bs->query("INS 51 50D1-23341 6 12") << endl;  //1
+    // cout << bs->query("INS 51 50D1-23342 5 11") << endl;  //2
+    // cout << bs->query("INS 51 50D1-23341 13 14") << endl;  //3
+    // cout << bs->query("INS 51 50D1-23342 12 13") << endl;  //4
+    // cout << "....." << endl;
+    // cout << bs->query("DEL 50 4") << endl;  //0
+    // cout << bs->query("DEL 50 5 11") << endl; // 2
+    // cout << bs->query("DEL 50 3 5") << endl; // 0 vi no bi xoa may bus o lenh tren
+    // cout << bs->query("DEL 51") << endl;  //4
+    // cout << bs->query("DEL 51") << endl;   //0
+
+    // cout << bs->query("DEL 52") << endl;  //0
 }
