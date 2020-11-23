@@ -56,7 +56,7 @@ public:
         os << data.ID << " | " << data.LP << " | " << data.CASE << " | " << data.TIME_A << " | "  << data.TIME_B;
         return os;
     }
-    Bus &operator=(Bus &data)
+    Bus &operator=(const Bus &data)
     {
         this->ID = data.ID;
         this->CASE = data.CASE;
@@ -218,6 +218,8 @@ int BusSystem::INS(string _ID, string _LP, int _time_A, int _time_B, int _CASE)
         return -1;
     if (Henry->second.size() == N)
         return -1;
+    if (_time_A >= _time_B)
+        return -1;
     if (Henry == this->System.end()) // Not found the ID
     {
         // Create new bus to insert into map
@@ -324,16 +326,16 @@ int BusSystem::DEL(string _ID, int _time_A, int _time_B)
                 {
                     if (_time_A <= it_bus->TIME_A && it_bus->TIME_A <= _time_B)
                     {
-                        // Henry->second.erase(it_bus);
-                        // it_bus--;
-                        if (Henry->second.size() == 1)
-                        {
-                            Henry->second.clear();
-                            count_delete_bus++;
-                            break;
-                        }
-                        *it_bus = Henry->second.back();
-                        Henry->second.pop_back();
+                        Henry->second.erase(it_bus);
+                        it_bus--;
+                        // if (Henry->second.size() == 1)
+                        // {
+                        //     Henry->second.clear();
+                        //     count_delete_bus++;
+                        //     break;
+                        // }
+                        // *it_bus = Henry->second.back();
+                        // Henry->second.pop_back();
                         count_delete_bus++;
                     }
                 }
@@ -341,16 +343,16 @@ int BusSystem::DEL(string _ID, int _time_A, int _time_B)
                 {
                     if (_time_A == it_bus->TIME_A)
                     {
-                        // Henry->second.erase(it_bus);
-                        // it_bus--;
-                        if (Henry->second.size() == 1)
-                        {
-                            Henry->second.clear();
-                            count_delete_bus++;
-                            break;
-                        }
-                        *it_bus = Henry->second.back();
-                        Henry->second.pop_back();
+                        Henry->second.erase(it_bus);
+                        it_bus--;
+                        // if (Henry->second.size() == 1)
+                        // {
+                        //     Henry->second.clear();
+                        //     count_delete_bus++;
+                        //     break;
+                        // }
+                        // *it_bus = Henry->second.back();
+                        // Henry->second.pop_back();
                         count_delete_bus++;
                     }
                 }
@@ -747,10 +749,6 @@ string BusSystem::query(string instruction)
                 _time_B = Result.at(i);
                 i++;
             }
-            if (_CASE != "1" && _CASE != "0")
-            {
-                return "-1";
-            }
         }
         else // CASE does not exist
         {
@@ -802,6 +800,9 @@ string BusSystem::query(string instruction)
         {
             _time_B.erase(_time_B.begin());
         }
+        if (_time_A == "") _time_A = "0";
+        if (_time_B == "") _time_B = "0";
+        if (to_string(stoi(_CASE)) != "0" && to_string(stoi(_CASE)) != "1") return "-1";
         if (to_string(stoi(_time_A)) != _time_A) return "-1";
         if (to_string(stoi(_time_B)) != _time_B) return "-1";
         // Debug message
@@ -1084,27 +1085,23 @@ string BusSystem::query(string instruction)
  * 3. Check valid case input (not [Case], but Case)
  * 4. Check the right order of each element in the input string
  * */
-#define Out cout
-int main()
-{
-    BusSystem* bs = new BusSystem();
-    bs->input(bs);
-    // cout << bs->query("SQ 500") << endl;
-    // cout << bs->query("INS 50 50D1-23341 6 12") << endl;  //1
-    // cout << bs->query("INS 50 50D1-23342 5 11") << endl;  //2
-    // cout << bs->query("INS 50 50D1-23341 13 14") << endl;  //3
-    // cout << bs->query("INS 50 50D1-23342 12 13") << endl;   //4
-    // cout << "......." << endl;
-    // cout << bs->query("INS 51 50D1-23341 6 12") << endl;  //1
-    // cout << bs->query("INS 51 50D1-23342 5 11") << endl;  //2
-    // cout << bs->query("INS 51 50D1-23341 13 14") << endl;  //3
-    // cout << bs->query("INS 51 50D1-23342 12 13") << endl;  //4
-    // cout << "....." << endl;
-    // cout << bs->query("DEL 50 4") << endl;  //0
-    // cout << bs->query("DEL 50 5 11") << endl; // 2
-    // cout << bs->query("DEL 50 3 5") << endl; // 0 vi no bi xoa may bus o lenh tren
-    // cout << bs->query("DEL 51") << endl;  //4
-    // cout << bs->query("DEL 51") << endl;   //0
+// #define Out cout
+// int main()
+// {
+//     BusSystem* bs = new BusSystem();
+//     bs->input(bs);
+//     // clock_t start, end;
+//     // float runTime;
+//     // start = clock();1
 
-    // cout << bs->query("DEL 52") << endl;  //0
+//     // end = clock();
+//     // runTime = (float)(end - start) / CLOCKS_PER_SEC;
+//     // cout << "Run Time : " << setiosflags(ios::fixed) << setprecision(20) << runTime << endl;
+// }
+#include <ctime>
+// #define result cout
+int main () {
+
+   BusSystem* bs = new BusSystem();
+   bs->input(bs);
 }
