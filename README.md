@@ -52,9 +52,9 @@ $ GE <CODE> <TIME> [<CASE>]
 ```
 Return the license plate of the bus trip of the route with code "CODE" which has ended at the time closest to the considered time "TIME". When we have value "CASE", it need to return the correct trip corresponding to outward trips or return trips, otherwise, we will consider both directions. In case there is no trip that is satisfied, return -1. In case considering both directions, if there are 2 satisfied trips, return the outward trip.
 # 5. Mode
-In mode in which users directly provide the command to manipulate the System, Just type the command satisfied the above-description. Besides, there are a command that print the current system, you will be noticed when run the program.
+In mode in which users directly provide the command to manipulate the System, just type the command satisfied the above-description. Besides, there are a command that print the current system, you will be noticed when run the program.
 
-Or in mode in which users can change the source code in order to manipulate the inside code. You need to create an object like the following:
+Or in mode in which users can change the source code in order to manipulate the inline code. You need to create an object like the following:
 ```sh
 $ BusSystem *bs = new BusSystem;
 ```
